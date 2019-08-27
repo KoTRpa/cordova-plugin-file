@@ -89,6 +89,9 @@ NSString* const kCDVFilesystemURLPrefix = @"cdvfile";
         if (pathComponents != nil && pathComponents.count > 1) {
             return [pathComponents objectAtIndex:1];
         }
+    } else if ([[uri scheme] isEqualToString:@"https"] && [uri pathComponents] != nil &&
+             [uri pathComponents].count > 2 && [[[uri pathComponents] objectAtIndex:1] isEqualToString:@"cdvfile"]) {
+        return [[uri pathComponents] objectAtIndex:2];
     } else if ([[uri scheme] isEqualToString:kCDVAssetsLibraryScheme]) {
         return @"assets-library";
     }
@@ -114,8 +117,19 @@ NSString* const kCDVFilesystemURLPrefix = @"cdvfile";
             return @"";
         }
         return [path substringFromIndex:slashRange.location];
+    } else if ([[uri scheme] isEqualToString:@"https"] && [uri pathComponents] != nil &&
+             [uri pathComponents].count > 2 && [[[uri pathComponents] objectAtIndex:1] isEqualToString:@"cdvfile"]) {
+        NSString *path = [[uri path] substringFromIndex:(@"cdvfile".length + 1)];
+        if ([uri query]) {
+            path = [NSString stringWithFormat:@"%@?%@", path, [uri query]];
+        }
+        NSRange slashRange = [path rangeOfString:@"/" options:0 range:NSMakeRange(1, path.length - 1)];
+        if (slashRange.location == NSNotFound) {
+            return @"";
+        }
+        return [path substringFromIndex:slashRange.location];
     } else if ([[uri scheme] isEqualToString:kCDVAssetsLibraryScheme]) {
-        return [[uri absoluteString] substringFromIndex:[kCDVAssetsLibraryScheme length]+2];
+        return [[uri absoluteString] substringFromIndex:[kCDVAssetsLibraryScheme length] + 2];
     }
     return nil;
 }
@@ -142,7 +156,9 @@ NSString* const kCDVFilesystemURLPrefix = @"cdvfile";
 + (BOOL)canInitWithRequest:(NSURLRequest*)request
 {
     NSURL* url = [request URL];
-    return [[url scheme] isEqualToString:kCDVFilesystemURLPrefix];
+    return [[url scheme] isEqualToString:kCDVFilesystemURLPrefix] ||
+        ([[url scheme] isEqualToString:@"https"] && [url pathComponents] != nil &&
+        [url pathComponents].count > 2 && [[[url pathComponents] objectAtIndex:1] isEqualToString:@"cdvfile"]);
 }
 
 + (NSURLRequest*)canonicalRequestForRequest:(NSURLRequest*)request

@@ -245,6 +245,17 @@ public class FileUtils extends CordovaPlugin {
 
     @Override
     public Uri remapUri(Uri uri) {
+        String sUri = uri.toString();
+
+        // avoid security issue due loading via cdvfile protocol
+        // unified with ios
+        if (sUri.indexOf("https://localhost/cdvfile/bundle/www/") >= 0) {
+            uri = Uri.parse(sUri.replace("https://localhost/cdvfile/bundle/www/", "cdvfile://localhost/assets/www/"));
+        } else {
+            // remap https://localhost/cdvfile to cdvfile://localhost
+            uri = Uri.parse(sUri.replace("https://cdvfile/localhost/", "cdvfile://localhost/"));
+        }
+
         // Remap only cdvfile: URLs (not content:).
         if (!LocalFilesystemURL.FILESYSTEM_PROTOCOL.equals(uri.getScheme())) {
             return null;
